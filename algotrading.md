@@ -72,6 +72,33 @@ accumulated_shares <- 0
 
 for (i in 1:nrow(amd_df)) {
 # Fill your code here
+
+current_price <- amd_df$close[i]
+  if (i == nrow(amd_df)) {
+    # Sell on the last day
+    amd_df$trade_type[i] <- 'sell'
+    amd_df$costs_proceeds[i] <- accumulated_shares * current_price
+    accumulated_shares <- 0
+  } else {
+    if (previous_price == 0) {
+      # Initial buy
+      amd_df$trade_type[i] <- 'buy'
+      amd_df$costs_proceeds[i] <- -current_price * share_size
+      accumulated_shares <- accumulated_shares + share_size
+    } else if (current_price < previous_price) {
+      # Buy if current price is less than the previous day's price
+      amd_df$trade_type[i] <- 'buy'
+      amd_df$costs_proceeds[i] <- -current_price * share_size
+      accumulated_shares <- accumulated_shares + share_size
+    } else if (current_price > previous_price) {
+      amd_df$costs_proceeds[i] <- 0
+    } 
+  }
+  # Update the accumulated shares
+  amd_df$accumulated_shares[i] <- accumulated_shares
+  
+  # Update previous price
+  previous_price <- current_price
 }
 ```
 
@@ -80,6 +107,12 @@ for (i in 1:nrow(amd_df)) {
 - Define a trading period you wanted in the past five years 
 ```r
 # Fill your code here
+# Define the start and end dates for the trading period
+start_date <- as.Date("2021-08-11")
+end_date <- as.Date("2023-03-01")
+
+# Filter the DataFrame for the specified trading period
+amd_df <- subset(amd_df, date >= start_date & date <= end_date)
 ```
 
 
@@ -92,6 +125,15 @@ After running your algorithm, check if the trades were executed as expected. Cal
 
 ```r
 # Fill your code here
+amd_df$ROI <- NA
+amd_df$profit_loss <- 0
+total_profit_loss <- sum(amd_df$costs_proceeds, na.rm = TRUE)
+total_capital_invested <- sum(abs(amd_df$costs_proceeds[amd_df$trade_type == 'buy']), na.rm = TRUE)
+roi <- (total_profit_loss / total_capital_invested) * 100
+roi_formatted <- sprintf("%.2f%%", roi)
+
+amd_df$ROI[1] <- roi_formatted
+amd_df$profit_loss[1] <- total_profit_loss
 ```
 
 ### Step 5: Profit-Taking Strategy or Stop-Loss Mechanisum (Choose 1)
@@ -101,6 +143,75 @@ After running your algorithm, check if the trades were executed as expected. Cal
 
 ```r
 # Fill your code here
+# Create new dataset
+trading_period_df <- amd_df
+# Initialize columns for stop-loss mechanism
+trading_period_df$trade_type <- NA
+trading_period_df$costs_proceeds <- 0
+trading_period_df$accumulated_shares <- 0
+trading_period_df$average_price <- NA
+
+# Initialize variables for trading logic
+previous_price <- 0
+share_size <- 100
+accumulated_shares <- 0
+average_purchase_price <- 0
+stop_loss_threshold <- 0.8  # 20% decrease threshold
+
+for (i in 1:nrow(trading_period_df)) {
+  current_price <- trading_period_df$close[i]
+  if (i == nrow(trading_period_df)) {
+    # Sell on the last day
+    trading_period_df$trade_type[i] <- 'sell'
+    trading_period_df$costs_proceeds[i] <- accumulated_shares * current_price
+    accumulated_shares <- 0
+  } else {
+    if (previous_price == 0) {
+      # Initial buy
+      trading_period_df$trade_type[i] <- 'buy'
+      trading_period_df$costs_proceeds[i] <- -current_price * share_size
+      accumulated_shares <- accumulated_shares + share_size
+      average_purchase_price <- current_price
+    } else if (current_price < previous_price) {
+      
+      # Buy if current price is less than the previous day's price
+      trading_period_df$trade_type[i] <- 'buy'
+      trading_period_df$costs_proceeds[i] <- -current_price * share_size
+      accumulated_shares <- accumulated_shares + share_size
+      average_purchase_price <- ((average_purchase_price * (accumulated_shares - share_size)) + (current_price * share_size)) / accumulated_shares
+      
+    } else if (current_price <= stop_loss_threshold * average_purchase_price) {
+      # Trigger stop-loss
+      trading_period_df$trade_type[i] <- 'sell'
+      # Sell half of the holdings
+      trading_period_df$costs_proceeds[i] <- accumulated_shares * current_price / 2  
+      accumulated_shares <- accumulated_shares / 2
+  
+    }
+  }
+  
+  
+  # Update the accumulated shares
+  trading_period_df$accumulated_shares[i] <- accumulated_shares
+  
+  # Update previous price
+  previous_price <- current_price
+  
+  # Update average price
+  trading_period_df$average_price[i] <- average_purchase_price
+}
+
+# Calculate ROI and P/L with new strategy
+trading_period_df$ROI <- NA
+trading_period_df$profit_loss <- 0
+total_profit_loss <- sum(trading_period_df$costs_proceeds, na.rm = TRUE)
+total_capital_invested <- sum(abs(trading_period_df$costs_proceeds[trading_period_df$trade_type == 'buy']), na.rm = TRUE)
+roi <- (total_profit_loss / total_capital_invested) * 100
+roi_formatted <- sprintf("%.2f%%", roi)
+
+trading_period_df$ROI[1] <- roi_formatted
+trading_period_df$profit_loss[1] <- total_profit_loss
+trading_period_df$capital_invested <- total_capital_invested
 ```
 
 
@@ -111,6 +222,7 @@ After running your algorithm, check if the trades were executed as expected. Cal
 
 ```r
 # Fill your code here and Disucss
+Discussion: During the trading period, the initial strategy yielded a Total Profit/Loss (P/L) of -379,097 dollars and a Return on Investment (ROI) of -19.11%. Implementing a stop-loss mechanism, which sells half of the holdings if the stock price drops 20% below the average purchase price, resulted in a Total P/L of -318,769.90 dollars and an ROI of -16.07%. This approach improved risk management by limiting significant losses during downturns. Notably, the release of AMD’s Radeon RX 6600 on October 13, 2021, and the Radeon RX 6500 XT on January 19, 2022, which was said to have a “70% Performance Boost” against competitors such as NVIDIA, positively impacted stock prices due to strong market reception as seen on the graph. These events bolstered the strategy’s performance, showing the stop-loss strategy’s effectiveness in preserving capital and leveraging market upswings, thus achieving better overall results compared to the initial strategy.
 ```
 
 Sample Discussion: On Wednesday, December 6, 2023, AMD CEO Lisa Su discussed a new graphics processor designed for AI servers, with Microsoft and Meta as committed users. The rise in AMD shares on the following Thursday suggests that investors believe in the chipmaker's upward potential and market expectations; My first strategy earned X dollars more than second strategy on this day, therefore providing a better ROI.
