@@ -219,13 +219,10 @@ trading_period_df$capital_invested <- total_capital_invested
 - Did your P/L and ROI improve over your chosen period?
 - Relate your results to a relevant market event and explain why these outcomes may have occurred.
 
-
-```r
-# Fill your code here and Disucss
 Discussion: During the trading period, the initial strategy yielded a Total Profit/Loss (P/L) of -379,097 dollars and a Return on Investment (ROI) of -19.11%. Implementing a stop-loss mechanism, which sells half of the holdings if the stock price drops 20% below the average purchase price, resulted in a Total P/L of -318,769.90 dollars and an ROI of -16.07%. This approach improved risk management by limiting significant losses during downturns. Notably, the release of AMD’s Radeon RX 6600 on October 13, 2021, and the Radeon RX 6500 XT on January 19, 2022, which was said to have a “70% Performance Boost” against competitors such as NVIDIA, positively impacted stock prices due to strong market reception as seen on the graph. These events bolstered the strategy’s performance, showing the stop-loss strategy’s effectiveness in preserving capital and leveraging market upswings, thus achieving better overall results compared to the initial strategy.
-```
 
-Sample Discussion: On Wednesday, December 6, 2023, AMD CEO Lisa Su discussed a new graphics processor designed for AI servers, with Microsoft and Meta as committed users. The rise in AMD shares on the following Thursday suggests that investors believe in the chipmaker's upward potential and market expectations; My first strategy earned X dollars more than second strategy on this day, therefore providing a better ROI.
+
+
 
 
 
