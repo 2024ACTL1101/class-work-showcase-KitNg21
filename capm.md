@@ -82,6 +82,14 @@ $$
 
 ```r
 #fill the code
+daily_estimations_df <- df
+daily_estimations_df$daily_return_AMD <- NA
+daily_estimations_df$daily_return_gspc <- NA
+for (i in 2:nrow(daily_estimations_df)) {
+ daily_estimations_df$daily_return_AMD[i] <- (amd_df$AMD[i]-amd_df$AMD[i-1])/(amd_df$AMD[i1])
+ daily_estimations_df$daily_return_gspc[i] <- (gspc_df$GSPC[i]-gspc_df$GSPC[i-1])/(gspc_df$G
+SPC[i-1])
+}
 ```
 
 - **Calculate Risk-Free Rate**: Calculate the daily risk-free rate by conversion of annual risk-free Rate. This conversion accounts for the compounding effect over the days of the year and is calculated using the formula:
@@ -92,6 +100,10 @@ $$
 
 ```r
 #fill the code
+daily_estimations_df$risk_free_rate <- NA
+for (i in 1:nrow(daily_estimations_df)) {
+ daily_estimations_df$risk_free_rate[i] <- (1 + df$RF[i]/100)^(1/360)-1
+}
 ```
 
 
@@ -99,6 +111,14 @@ $$
 
 ```r
 #fill the code
+daily_estimations_df$excess_returns_AMD <- NA
+daily_estimations_df$excess_returns_gspc <- NA
+for (i in 1: nrow(daily_estimations_df)) {
+ daily_estimations_df$excess_returns_AMD <- daily_estimations_df$daily_return_AMD - daily_es
+timations_df$risk_free_rate
+ daily_estimations_df$excess_returns_gspc <- daily_estimations_df$daily_return_gspc - daily_
+estimations_df$risk_free_rate
+}
 ```
 
 
@@ -106,6 +126,11 @@ $$
 
 ```r
 #fill the code
+Model_beta <- lm(daily_estimations_df$excess_returns_AMD ~ daily_estimations_df$excess_return
+s_gspc, data = daily_estimations_df)
+summary(Model_beta)
+beta <- coef(Model_beta[2])
+cat("The beta coefficient is: ", Model_beta$coefficients[2][1])
 ```
 
 
@@ -114,6 +139,7 @@ $$
 What is your \(\beta\)? Is AMD more volatile or less volatile than the market?
 
 **Answer:**
+I found my beta (from the previous part) to be 1.569999. Because the value of beta is greater than 1, it indicates that AMD’s stock is significantly more volatile than the overall market. For instance, if the market moves by 1%, AMD is expected to move by approximately 1.5530%. This higher volatility implies higher risk and potential for higher returns, aligning with the expectations of more aggressive investors.
 
 
 #### Plotting the CAPM Line
@@ -121,6 +147,14 @@ Plot the scatter plot of AMD vs. S&P 500 excess returns and add the CAPM regress
 
 ```r
 #fill the code
+plot<-ggplot(daily_estimations_df,aes(x=daily_estimations_df$excess_returns_gspc, y=daily_est
+imations_df$excess_returns_AMD))+
+ geom_point()+
+ geom_smooth(method="lm",col="red")+
+ labs(title="AMD Vs S&P 500",
+ x="S&P 500",
+ y="AMD")
+plot
 ```
 
 ### Step 3: Predictions Interval
@@ -132,4 +166,22 @@ Suppose the current risk-free rate is 5.0%, and the annual expected return for t
 
 ```r
 #fill the code
+# Extract beta and standard error of the forecast
+sf <- summary(Model_beta)$sigma
+beta <- coef(Model_beta)[2]
+# Convert daily standard error to annual
+annual_sf <- sf * sqrt(252)
+# Suppose current risk-free rate (Rf) is 5% and expected return for S&P 500 (Rm) is 13.3%
+Rf <- 0.05
+Rm <- 0.133
+# Calculate expected return for AMD using CAPM
+E_Ri <- Rf + beta * (Rm - Rf)
+# Calculate prediction interval
+alpha <- 0.10
+# Degrees of freedom: n-2
+t_value <- qt(1 - alpha / 2, df = nrow(daily_estimations_df) - 2)
+lower_bound <- E_Ri - t_value * annual_sf
+upper_bound <- E_Ri + t_value * annual_sf
+cat("The annual expected return of AMD is:",E_Ri,"\nThe 90% prediction interval for AMD's ann
+ual expected return is: [", lower_bound, ", ", upper_bound, "]\n")
 ```
